@@ -96,6 +96,31 @@ def kill_process_by_name(name, language):
     except Exception as e:
         print(language['kill_error'].format(error=e))
 
+def run_complex_cycle(tasks, language):
+    try:
+        while True:
+            for task in tasks:
+                file, on_time, off_time = task['file'], task['on_time'], task['off_time']
+                print(language['cycle_start'].format(file=file, on_time=on_time))
+                process = subprocess.Popen(['python', file])
+                time.sleep(on_time)
+                process.terminate()
+                print(language['cycle_stop'].format(file=file, off_time=off_time))
+                time.sleep(off_time)
+    except KeyboardInterrupt:
+        print(language['cycle_interrupted'])
+
+def parse_complex_cycle_arg(arg):
+    tasks = []
+    for entry in arg:
+        file, on_time, off_time = entry.split(':')
+        tasks.append({
+            'file': file,
+            'on_time': int(on_time) * 3600, 
+            'off_time': int(off_time) * 3600  
+        })
+    return tasks
+
 def main():
     language = get_language()
     parser = argparse.ArgumentParser(description="Python file manager CLI.")
@@ -107,6 +132,8 @@ def main():
     parser.add_argument('--runonce', metavar='FILE', help="Run a Python file once.")
     parser.add_argument('--listprocs', action='store_true', help="List all running Python processes.")
     parser.add_argument('--kill', metavar='NAME', help="Kill a Python process by name.")
+    parser.add_argument('--complexcycle', nargs='+', metavar='FILE:ON_TIME:OFF_TIME',
+                        help="Run multiple Python files in complex cycles.")
 
     args = parser.parse_args()
 
@@ -130,6 +157,9 @@ def main():
     if args.kill:
         kill_process_by_name(args.kill, language)
 
+    if args.complexcycle:
+        tasks = parse_complex_cycle_arg(args.complexcycle)
+        run_complex_cycle(tasks, language)
+
 if __name__ == "__main__":
     main()
-
